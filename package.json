@@ -1,0 +1,13 @@
+{
+  "name": "smart-edge-x",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dukascopy-node": "^1.51.1",
+    "express": "^5.1.0"
+  }
+}
