@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080e1b"><title>SMART EDGE X V7 — EURJPY Adaptive Research</title>
+<style>
+:root{--bg:#080e1b;--p:#111b2e;--p2:#17243b;--line:#293955;--txt:#edf3ff;--muted:#94a4bf;--green:#35d39a;--red:#ff7180;--gold:#f3c66d;--blue:#83b2ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+header{position:sticky;top:0;background:#0a1020f2;padding:14px 16px;border-bottom:1px solid var(--line);z-index:3;display:flex;justify-content:space-between;align-items:center;backdrop-filter:blur(12px)}
+.brand{font-size:19px;font-weight:900;letter-spacing:1px}.brand em{font-style:normal;color:var(--blue)}main{max-width:1000px;margin:auto;padding:14px}
+.pill{border:1px solid #69552b;color:var(--gold);border-radius:24px;padding:5px 9px;font-size:10px;white-space:nowrap}
+h1{font-size:22px;margin:8px 0}.sub{font-size:10px;color:var(--muted);letter-spacing:1px}.muted,small{color:var(--muted)}
+.card{background:linear-gradient(145deg,var(--p),#0f1728);border:1px solid var(--line);border-radius:15px;padding:14px;margin:12px 0}
+h2{font-size:16px;margin:0 0 12px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{flex:1;min-width:130px}
+button,select,input{font:inherit;color:var(--txt);background:var(--p2);border:1px solid var(--line);border-radius:9px;padding:10px;width:100%}
+button{cursor:pointer}.primary{background:#24528b;border-color:#477fbd}button:disabled{opacity:.5;cursor:wait}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.metric{background:#0c1527;border:1px solid var(--line);border-radius:11px;padding:10px;min-width:0}.metric b{font-size:20px;display:block;overflow-wrap:anywhere}
+.good{color:var(--green)}.bad{color:var(--red)}.gold{color:var(--gold)}
+.notice{background:#282216;border:1px solid #66552d;color:#e7d6aa;padding:11px;border-radius:10px;margin:10px 0}
+.progress{height:7px;background:#25334c;border-radius:8px;overflow:hidden}.progress span{display:block;background:var(--blue);height:100%;width:0}
+table{border-collapse:collapse;width:100%;font-size:12px}td,th{text-align:left;padding:8px 5px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--muted)}.scroll{overflow:auto}
+.status{font-size:12px;margin-top:8px;white-space:pre-wrap}.hidden{display:none!important}
+.strategy{border:1px solid var(--line);border-radius:10px;background:#0c1527;padding:10px}.strategy b{display:block}
+footer{text-align:center;color:var(--muted);font-size:10px;padding:18px}
+@media(max-width:600px){.grid{grid-template-columns:repeat(2,1fr)}main{padding:10px}.brand{font-size:17px}}
+</style></head><body>
+<header><div><div class="brand">SMART EDGE <em>X</em> V7</div><div class="sub">EURJPY ADAPTIVE PROBABILITY RESEARCH</div></div><span class="pill">PAPER ONLY</span></header>
+<main>
+<h1>EUR/JPY adaptive signal research</h1><div class="muted">One pair · M1 data · 1 / 2 / 5 minute expiry · no broker connection</div>
+<div class="notice"><b>Research rules:</b> V7 does not promise 75% accuracy. It trains on earlier data, calibrates probabilities on a later slice, selects a threshold on a separate validation slice, then tests once on untouched future data. If the evidence is insufficient, it reports NO EDGE. No live orders are possible.</div>
+
+<section class="card">
+<h2>1. Historical EUR/JPY data</h2>
+<div class="row"><label>From<input id="from" type="date" value="2026-01-01"></label><label>To<input id="to" type="date" value="2026-11-11"></label></div>
+<div class="row" style="margin-top:9px"><button class="primary" id="download">Download M1 candles</button><label>Import CSV<input id="csv" type="file" accept=".csv,text/csv"></label></div>
+<div class="progress" style="margin-top:10px"><span id="downloadBar"></span></div>
+<div id="dataStatus" class="status muted">Checking this device for the existing EUR/JPY dataset…</div>
+<div class="metric" style="margin-top:10px"><small>Loaded EUR/JPY candles</small><b id="count">0</b><small id="range">No data</small></div>
+</section>
+
+<section class="card">
+<h2>2. V7 model configuration</h2>
+<div class="row">
+<label>Assumed payout<select id="payout"><option value=".70">70%</option><option value=".75">75%</option><option value=".80" selected>80%</option><option value=".85">85%</option><option value=".90">90%</option></select></label>
+<label>Target win rate<select id="target"><option value=".65">65%</option><option value=".70">70%</option><option value=".75" selected>75%</option></select></label>
+</div>
+<div class="row" style="margin-top:9px">
+<label>Minimum trades / active hour<select id="minFreq"><option value="3">3</option><option value="5" selected>5</option><option value="7">7</option></select></label>
+<label>Maximum trades / active hour<select id="maxFreq"><option value="8">8</option><option value="10" selected>10</option><option value="12">12</option></select></label>
+</div>
+<div class="notice" id="breakeven">At 80% payout, break-even is 55.56% before quote/feed differences.</div>
+<p class="muted">Three regularized probability experts are blended: trend continuation, momentum/breakout and mean-reversion. A market-regime filter measures trend strength, volatility and range conditions. All features use only completed candles available before entry.</p>
+<button class="primary" id="run">Train and test V7 — all 3 expiries</button>
+<div class="progress" style="margin-top:10px"><span id="runBar"></span></div>
+<div id="runStatus" class="status muted">Waiting for historical candles.</div>
+</section>
+
+<section class="card">
+<h2>3. Results — validation vs untouched holdout</h2>
+<div class="grid">
+<div class="metric"><small>Research verdict</small><b id="verdict">—</b></div>
+<div class="metric"><small>Best holdout win rate</small><b id="bestRate">—</b></div>
+<div class="metric"><small>Best holdout net units</small><b id="bestNet">—</b></div>
+</div>
+<div class="scroll" style="margin-top:10px"><table><thead><tr><th>Expiry</th><th>Val trades/hr</th><th>Val win%</th><th>Val net</th><th>Holdout trades/hr</th><th>Holdout win%</th><th>Holdout net</th><th>Holdout DD</th><th>Threshold</th></tr></thead><tbody id="results"><tr><td colspan="9">No model run yet.</td></tr></tbody></table></div>
+<div id="details" class="status muted"></div>
+<button id="export" style="margin-top:10px" disabled>Export untouched holdout trade log CSV</button>
+</section>
+
+<section class="card">
+<h2>4. V7 strategy modules</h2>
+<div class="grid">
+<div class="strategy"><b>Trend continuation</b><small>EMA alignment, slope, ADX-style directional strength and pullback location.</small></div>
+<div class="strategy"><b>Momentum / breakout</b><small>Multi-horizon returns, candle impulse and distance from recent range extremes.</small></div>
+<div class="strategy"><b>Mean reversion</b><small>RSI, Bollinger-style z-score, wick rejection and close location.</small></div>
+</div>
+<p class="muted">The experts are independently regularized logistic models. Their blended output is calibrated on a chronological calibration slice. The threshold is chosen only on the validation slice; the holdout is not used to tune the model.</p>
+</section>
+
+<section class="card">
+<h2>5. Validation safeguards</h2>
+<ul class="muted">
+<li>Chronological partitions: 60% training, 15% calibration, 10% validation, 15% untouched holdout.</li>
+<li>Expiry-boundary purge prevents labels from crossing between partitions.</li>
+<li>Entry is the next M1 candle open; expiry is the selected expiry candle close.</li>
+<li>Only continuous minute sequences are eligible; gaps, invalid OHLC rows and ties are excluded.</li>
+<li>Trades cannot overlap: the cooldown is at least the selected expiry.</li>
+<li>A PASS requires at least 100 validation and 100 holdout trades, 75% target accuracy, positive net units and 5–10 trades per active hour in both validation and holdout.</li>
+<li>If no validation threshold meets the requirements, the model is not tuned against the holdout. It reports NO EDGE.</li>
+</ul>
+<div class="notice">Dukascopy bid candles are a historical proxy, not the exact binary-platform settlement feed. Payout is an assumption. Historical success cannot guarantee future results.</div>
+</section>
+<footer>SMART EDGE X V7 · EURJPY only · Paper research · No broker execution · No profit guarantee</footer>
+</main>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const DB_NAME='smart-edge-x-cache';
+let candles=[],report=[],holdoutLog=[];
+const F=25,STEP=2;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const sigmoid=x=>1/(1+Math.exp(-clamp(x,-25,25)));
+const logit=p{ return Math.log(clamp(p,1e-6,1-1e-6)/(1-clamp(p,1e-6,1-1e-6))); };
+function dbOpen(){return new Promise((resolve,reject)=>{const q=indexedDB.open(DB_NAME);q.onupgradeneeded=()=>{if(!q.result.objectStoreNames.contains('candles'))q.result.createObjectStore('candles')};q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)})}
+async function restoreData(){try{const db=await dbOpen();const data=await new Promise((resolve,reject)=>{const q=db.transaction('candles').objectStore('candles').get('EURJPY');q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)});db.close();if(Array.isArray(data)&&data.length>1000){candles=cleanCandles(data);showData('Restored EUR/JPY historical candles from this device.')}else{$('dataStatus').textContent='No saved EUR/JPY candles found. Download or import the M1 CSV.'}}catch(e){$('dataStatus').textContent='Could not read local candle storage: '+e.message}}
+function cleanCandles(rows){const map=new Map();for(const x of rows||[]){const t=Number(x.t??x.timestamp),o=Number(x.o??x.open),h=Number(x.h??x.high),l=Number(x.l??x.low),c=Number(x.c??x.close);if(![t,o,h,l,c].every(Number.isFinite)||t<=0||o<=0||h<=0||l<=0||c<=0||h<Math.max(o,c,l)||l>Math.min(o,c,h))continue;map.set(t,{t,o,h,l,c})}return [...map.values()].sort((a,b)=>a.t-b.t)}
+async function persistData(){const db=await dbOpen();await new Promise((resolve,reject)=>{const tx=db.transaction('candles','readwrite');tx.objectStore('candles').put(candles,'EURJPY');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close()}
+function showData(message){$('count').textContent=candles.length.toLocaleString();$('range').textContent=candles.length?new Date(candles[0].t).toISOString().slice(0,10)+' to '+new Date(candles[candles.length-1].t).toISOString().slice(0,10):'No data';$('dataStatus').textContent=message}
+function parseCSV(s){const lines=s.trim().split(/\r?\n/);if(lines.length<100)throw Error('CSV must contain at least 100 rows.');const heads=lines.shift().split(',').map(x=>x.trim().toLowerCase()),ix=k=>heads.indexOf(k);let ti=ix('timestamp');if(ti<0)ti=ix('time');if(ti<0)throw Error('CSV needs timestamp or time column.');for(const k of ['open','high','low','close'])if(ix(k)<0)throw Error('Missing '+k+' column.');const out=[];for(const line of lines){const a=line.split(','),raw=a[ti];let t=Number(raw);if(!Number.isFinite(t)||t<1e11)t=Date.parse(raw);out.push({t,o:+a[ix('open')],h:+a[ix('high')],l:+a[ix('low')],c:+a[ix('close')]})}return cleanCandles(out)}
+$('csv').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{candles=parseCSV(await f.text());await persistData();showData('CSV imported and saved locally.')}catch(err){alert('CSV import failed: '+err.message)}};
+$('download').onclick=async()=>{const from=$('from').value,to0=$('to').value;if(!from||!to0||from>to0){alert('Choose a valid date range.');return}const to=new Date(Date.parse(to0+'T00:00:00Z')+86400000).toISOString().slice(0,10),days=(Date.parse(to+'T00:00:00Z')-Date.parse(from+'T00:00:00Z'))/86400000;if(days>366){alert('Maximum download range is 366 days.');return}let all=[],cursor=from,done=0;$('download').disabled=true;$('downloadBar').style.width='0%';try{while(cursor<to){const next=new Date(Math.min(Date.parse(cursor+'T00:00:00Z')+14*86400000,Date.parse(to+'T00:00:00Z'))).toISOString().slice(0,10);$('dataStatus').textContent='Downloading EURJPY '+cursor+' to '+next+' ('+(done+1)+' of '+Math.ceil(days/14)+' batches)…';const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),120000);let res;try{res=await fetch('/api/history?pair=EURJPY&from='+encodeURIComponent(cursor)+'&to='+encodeURIComponent(next),{cache:'no-store',signal:controller.signal})}finally{clearTimeout(timer)}if(!res.ok)throw Error(await res.text());const payload=await res.json();if(!Array.isArray(payload.candles)||!payload.candles.length)throw Error('No candles returned for '+cursor+' to '+next);all.push(...payload.candles);cursor=next;done++;$('downloadBar').style.width=Math.round(done/Math.ceil(days/14)*100)+'%'}candles=cleanCandles(all.map(x=>({t:+x.timestamp,o:+x.open,h:+x.high,l:+x.low,c:+x.close})));if(candles.length<1000)throw Error('Provider returned too few candles.');await persistData();showData('Download complete. Saved '+candles.length.toLocaleString()+' EUR/JPY candles on this device.')}catch(err){$('dataStatus').textContent='Download stopped: '+(err.name==='AbortError'?'A batch timed out. Tap download again to retry.':err.message)}finally{$('download').disabled=false}};
+$('payout').onchange=()=>{const p=+$('payout').value;$('breakeven').textContent='At '+Math.round(p*100)+'% payout, break-even is '+(100/(1+p)).toFixed(2)+'% before quote/feed differences.'};
+
+function ema(values,period){const out=new Float64Array(values.length),k=2/(period+1);out[0]=values[0];for(let i=1;i<values.length;i++)out[i]=k*values[i]+(1-k)*out[i-1];return out}
+function buildFeatures(d){
+ const n=d.length,close=d.map(x=>x.c),e9=ema(close,9),e21=ema(close,21),e50=ema(close,50),e100=ema(close,100);
+ const atr=new Float64Array(n),rsi=new Float64Array(n),mean20=new Float64Array(n),sd20=new Float64Array(n),atrMean50=new Float64Array(n),adx=new Float64Array(n);
+ let gain=0,loss=0,trSum=0,plusSum=0,minusSum=0;
+ for(let i=1;i<n;i++){const change=close[i]-close[i-1],tr=Math.max(d[i].h-d[i].l,Math.abs(d[i].h-close[i-1]),Math.abs(d[i].l-close[i-1]));if(i<=14){trSum+=tr;if(change>0)gain+=change;else loss-=change;if(i===14){atr[i]=trSum/14;rsi[i]=loss===0?100:100-100/(1+gain/loss)}}else{atr[i]=(atr[i-1]*13+tr)/14;const g=change>0?change:0,l=change<0?-change:0;gain=(gain*13+g)/14;loss=(loss*13+l)/14;rsi[i]=loss===0?100:100-100/(1+gain/loss)}}
+ for(let i=1;i<n;i++){const up=d[i].h-d[i-1].h,down=d[i-1].l-d[i].l;plusSum+=up>down&&up>0?up:0;minusSum+=down>up&&down>0?down:0;if(i>=14){const p=100*plusSum/(plusSum+minusSum+1e-12);adx[i]=Math.abs(2*p-100)}}
+ let sum=0,sq=0,as=0;
+ for(let i=0;i<n;i++){sum+=close[i];sq+=close[i]*close[i];as+=atr[i];if(i>=20){sum-=close[i-20];sq-=close[i-20]*close[i-20]}if(i>=50)as-=atr[i-50];if(i>=19){mean20[i]=sum/20;sd20[i]=Math.sqrt(Math.max(1e-18,sq/20-mean20[i]*mean20[i]))}if(i>=49)atrMean50[i]=as/50}
+ const rows=[],times=[],barIndex=[];
+ for(let i=100;i<n-8;i+=STEP){const a=atr[i],range=d[i].h-d[i].l;if(!a||!range||!sd20[i]||!atrMean50[i])continue;let hi=-Infinity,lo=Infinity;for(let j=i-20;j<i;j++){if(d[j].h>hi)hi=d[j].h;if(d[j].l<lo)lo=d[j].l}const body=close[i]-d[i].o,upper=d[i].h-Math.max(close[i],d[i].o),lower=Math.min(close[i],d[i].o)-d[i].l,hr=new Date(d[i].t).getUTCHours(),wd=new Date(d[i].t).getUTCDay();
+ const vals=[
+ (close[i]-close[i-1])/a,(close[i]-close[i-3])/a,(close[i]-close[i-5])/a,(close[i]-close[i-10])/a,(close[i]-close[i-20])/a,(close[i]-close[i-50])/a,
+ (e9[i]-e21[i])/a,(e21[i]-e50[i])/a,(e50[i]-e100[i])/a,(e21[i]-e21[i-5])/a,(e50[i]-e50[i-10])/a,
+ (rsi[i]-50)/25,(close[i]-mean20[i])/(2*sd20[i]),atr[i]/atrMean50[i]-1,adx[i]/50,
+ body/range,upper/range,lower/range,(close[i]-d[i].l)/range,(close[i]-hi)/a,(close[i]-lo)/a,
+ Math.sin(2*Math.PI*hr/24),Math.cos(2*Math.PI*hr/24),Math.sin(2*Math.PI*wd/7),Math.cos(2*Math.PI*wd/7)
+ ];
+ if(vals.some(v=>!Number.isFinite(v)))continue;rows.push(vals.map(v=>clamp(v,-8,8)));times.push(d[i+1].t);barIndex.push(i)}
+ const X=new Float32Array(rows.length*F);for(let r=0;r<rows.length;r++)for(let k=0;k<F;k++)X[r*F+k]=rows[r][k];
+ return{X,F,barIndex:Uint32Array.from(barIndex),times:Float64Array.from(times),count:rows.length};
+}
+const GROUPS=[
+ {name:'Trend expert',features:[0,1,2,3,4,5,6,7,8,9,10,14,19,20]},
+ {name:'Momentum expert',features:[0,1,2,3,4,5,6,9,14,15,18,19,20]},
+ {name:'Mean-reversion expert',features:[6,7,11,12,13,15,16,17,18,19,20]}
+];
+const ALL_FEATURES=Array.from({length:F},(_,i)=>i);
+function makeLabels(fs,d,h){
+ const ids=[],ys=[],ts=[],n=fs.count;
+ for(let r=0;r<n;r++){const i=fs.barIndex[r];let continuous=true;for(let j=i;j<i+h;j++)if(d[j+1].t-d[j].t!==60000){continuous=false;break}if(!continuous)continue;
+ const entry=d[i+1].o,exit=d[i+h].c;if(!Number.isFinite(entry)||!Number.isFinite(exit)||entry<=0||exit===entry)continue;
+ ids.push(r);ys.push(exit>entry?1:0);ts.push(fs.times[r])}
+ return{ids:Uint32Array.from(ids),y:Uint8Array.from(ys),t:Float64Array.from(ts),n:ids.length};
+}
+function fitLogistic(fs,labels,end,features){
+ const mean=new Float64Array(features.length),sd=new Float64Array(features.length),w=new Float64Array(features.length+1),N=end,FN=fs.F;
+ for(let q=0;q<features.length;q++){let s=0;for(let r=0;r<N;r++)s+=fs.X[labels.ids[r]*FN+features[q]];mean[q]=s/N}
+ for(let q=0;q<features.length;q++){let s=0;for(let r=0;r<N;r++){const z=fs.X[labels.ids[r]*FN+features[q]]-mean[q];s+=z*z}sd[q]=Math.sqrt(s/N)||1}
+ const grad=new Float64Array(features.length+1),epochs=5,lr=.12,lambda=.025;
+ for(let ep=0;ep<epochs;ep++){grad.fill(0);for(let r=0;r<N;r++){let z=w[features.length],base=labels.ids[r]*FN;for(let q=0;q<features.length;q++)z+=w[q]*(fs.X[base+features[q]]-mean[q])/sd[q];const err=sigmoid(z)-labels.y[r];for(let q=0;q<features.length;q++)grad[q]+=err*(fs.X[base+features[q]]-mean[q])/sd[q]/N;grad[features.length]+=err/N}for(let q=0;q<features.length;q++)w[q]-=lr*(grad[q]+lambda*w[q]);w[features.length]-=lr*grad[features.length]}
+ return{features,mean,sd,w};
+}
+function expertProb(fs,row,model){let z=model.w[model.features.length],base=row*fs.F;for(let q=0;q<model.features.length;q++)z+=model.w[q]*(fs.X[base+model.features[q]]-model.mean[q])/model.sd[q];return sigmoid(z)}
+function rawEnsemble(fs,row,models){let p=0;for(const m of models)p+=expertProb(fs,row,m);return p/models.length}
+function fitCalibration(fs,labels,models,start,end){let a=1,b=0;for(let ep=0;ep<220;ep++){let ga=0,gb=0;for(let r=start;r<end;r++){const z=Math.log(clamp(rawEnsemble(fs,labels.ids[r],models),1e-6,1-1e-6)/(1-clamp(rawEnsemble(fs,labels.ids[r],models),1e-6,1-1e-6))),q=sigmoid(a*z+b),err=q-labels.y[r];ga+=err*z;gb+=err}const rate=.08/Math.max(1,end-start);a-=rate*(ga+.02*(a-1));b-=rate*gb}return{predict:row=>{const p=rawEnsemble(fs,row,models),z=Math.log(clamp(p,1e-6,1-1e-6)/(1-clamp(p,1e-6,1-1e-6)));return sigmoid(a*z+b)}}}
+function hoursInRange(t,start,end){const set=new Set();for(let r=start;r<end;r++)set.add(Math.floor(t[r]/3600000));return Math.max(1,set.size)}
+function simulate(fs,labels,cal,start,end,threshold,payout,h){
+ let trades=[],last=-Infinity,eq=0,peak=0,dd=0,wins=0;
+ for(let r=start;r<end;r++){const p=cal.predict(labels.ids[r]),conf=Math.max(p,1-p);if(conf<threshold||labels.t[r]-last<h*60000)continue;const side=p>=.5?1:0,win=side===labels.y[r],ret=win?payout:-1;eq+=ret;peak=Math.max(peak,eq);dd=Math.max(dd,peak-eq);if(win)wins++;trades.push({time:labels.t[r],side:side?'CALL':'PUT',confidence:conf,win,ret,expiry:h});last=labels.t[r]}
+ const active=hoursInRange(labels.t,start,end);
+ return{trades,n:trades.length,wins,rate:trades.length?100*wins/trades.length:0,net:eq,dd,perHour:trades.length/active};
+}
+function trainExpiry(fs,d,h){
+ const labels=makeLabels(fs,d,h);if(labels.n<3000)throw Error(h+'m expiry has only '+labels.n+' usable samples; at least 3,000 are required.');
+ const n=labels.n,trainEnd=Math.floor(n*.60),calStart=trainEnd,calEnd=Math.floor(n*.75),valStart=calEnd,valEnd=Math.floor(n*.85),testStart=valEnd,purge=Math.max(3,Math.ceil(h/STEP)+2);
+ const trainStop=trainEnd-purge,calStop=calEnd-purge,valStop=valEnd-purge;
+ if(trainStop<1000||calStop-calStart<500||valStop-valStart<500||n-testStart<500)throw Error('Not enough data after chronological boundary purging for '+h+'m.');
+ const models=GROUPS.map(g=>fitLogistic(fs,labels,trainStop,g.features));
+ const cal=fitCalibration(fs,labels,models,calStart,calStop);
+ const payout=+$('payout').value,target=+$('target').value,minFreq=+$('minFreq').value,maxFreq=+$('maxFreq').value,candidates=[];
+ for(let th=.50;th<=.8501;th+=.01){const val=simulate(fs,labels,cal,valStart,valStop,th,payout,h);candidates.push({threshold:th,val})}
+ const qualified=candidates.filter(x=>x.val.n>=100&&x.val.rate>=target*100&&x.val.net>0&&x.val.perHour>=minFreq&&x.val.perHour<=maxFreq);
+ let pool=qualified.length?qualified:candidates.filter(x=>x.val.n>=100&&x.val.perHour>=minFreq&&x.val.perHour<=maxFreq);
+ if(!pool.length)pool=candidates.filter(x=>x.val.n>=100);
+ pool.sort((a,b)=>b.val.net-a.val.net);
+ const chosen=pool[0]||candidates.sort((a,b)=>b.val.net-a.val.net)[0];
+ const test=simulate(fs,labels,cal,testStart,n,chosen.threshold,payout,h);
+ const validationPass=qualified.length>0;
+ const holdoutPass=test.n>=100&&test.rate>=target*100&&test.net>0&&test.perHour>=minFreq&&test.perHour<=maxFreq;
+ return{h,samples:n,train:trainStop,calibration:calStop-calStart,validation:valStop-valStart,holdout:n-testStart,threshold:chosen.threshold,val:chosen.val,test,validationPass,holdoutPass,models:GROUPS.map(g=>g.name)};
+}
+function fmt(x){return Number.isFinite(x)?x.toFixed(2):'—'}
+function renderResults(out){
+ $('results').innerHTML=out.map(x=>'<tr><td>'+x.h+'m</td><td>'+fmt(x.val.perHour)+'</td><td>'+fmt(x.val.rate)+'%</td><td>'+fmt(x.val.net)+'</td><td>'+fmt(x.test.perHour)+'</td><td>'+fmt(x.test.rate)+'%</td><td class="'+(x.test.net>0?'good':'bad')+'">'+fmt(x.test.net)+'</td><td>'+fmt(x.test.dd)+'</td><td>'+Math.round(x.threshold*100)+'%</td></tr>').join('');
+ const passed=out.filter(x=>x.validationPass&&x.holdoutPass);
+ $('verdict').textContent=passed.length?'EDGE CANDIDATE':'NO EDGE';$('verdict').className=passed.length?'good':'bad';
+ const best=out.slice().sort((a,b)=>b.test.net-a.test.net)[0];$('bestRate').textContent=fmt(best.test.rate)+'%';$('bestNet').textContent=fmt(best.test.net);$('bestNet').className=best.test.net>0?'good':'bad';
+ $('details').textContent=out.map(x=>x.h+'m: validation '+x.val.n+' trades, '+fmt(x.val.rate)+'% wins, '+fmt(x.val.perHour)+'/active hour, '+fmt(x.val.net)+' net; holdout '+x.test.n+' trades, '+fmt(x.test.rate)+'% wins, '+fmt(x.test.perHour)+'/active hour, '+fmt(x.test.net)+' net, '+fmt(x.test.dd)+' max DD. Validation '+(x.validationPass?'met':'did not meet')+' all targets; holdout '+(x.holdoutPass?'met':'did not meet')+' all targets.').join('\n')+'\nA result is an EDGE CANDIDATE only when validation and untouched holdout both independently satisfy the selected accuracy, net, sample-size and frequency requirements. This remains a historical proxy, not proof of live profitability.';
+ holdoutLog=out.flatMap(x=>x.test.trades);$('export').disabled=!holdoutLog.length;
+}
+$('run').onclick=async()=>{
+ if(candles.length<5000){alert('Load at least 5,000 genuine EUR/JPY M1 candles first.');return}
+ const btn=$('run');btn.disabled=true;report=[];holdoutLog=[];$('runBar').style.width='2%';$('runStatus').textContent='Checking candle continuity and building causal features…';$('results').innerHTML='<tr><td colspan="9">Building features…</td></tr>';
+ try{
+  await new Promise(r=>setTimeout(r,40));const fs=buildFeatures(candles);if(fs.count<3000)throw Error('Not enough valid feature rows. Check the candle file.');
+  $('runStatus').textContent='Built '+fs.count.toLocaleString()+' feature rows. Training three expiry-specific ensembles…';$('runBar').style.width='12%';
+  for(const h of [1,2,5]){await new Promise(r=>setTimeout(r,35));report.push(trainExpiry(fs,candles,h));$('runBar').style.width=(12+report.length/3*82)+'%';$('runStatus').textContent='Completed '+h+'m model ('+report.length+'/3).'}
+  renderResults(report);$('runBar').style.width='100%';$('runStatus').textContent='All three V7 expiry models completed. Holdout was evaluated once and was not used to tune thresholds.';
+ }catch(err){$('runStatus').textContent='V7 run stopped: '+err.message;console.error(err);$('verdict').textContent='INCOMPLETE';$('verdict').className='gold'}finally{btn.disabled=false}
+};
+$('export').onclick=()=>{const rows=[['expiry_minutes','entry_timestamp_utc','direction','calibrated_confidence','outcome','net_units'],...holdoutLog.map(t=>[t.expiry,new Date(t.time).toISOString(),t.side,t.confidence.toFixed(5),t.win?'WIN':'LOSS',t.ret])];const csv=rows.map(r=>r.join(',')).join('\n'),url=URL.createObjectURL(new Blob([csv],{type:'text/csv'})),a=document.createElement('a');a.href=url;a.download='smart-edge-x-v7-eurjpy-holdout.csv';a.click();URL.revokeObjectURL(url)};
+restoreData();
+</script></body></html>
