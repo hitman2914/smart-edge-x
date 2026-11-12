@@ -1,0 +1,1 @@
+self.addEventListener('install',e=>e.waitUntil(caches.open('smart-edge-x-v03').then(c=>c.addAll(['/','/manifest.webmanifest']))));self.addEventListener('fetch',e=>{if(e.request.method==='GET'&&new URL(e.request.url).origin===location.origin)e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))})

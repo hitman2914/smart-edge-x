@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a1020"><title>SMART EDGE X</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--bg:#080e1b;--p:#111b2e;--p2:#17243b;--line:#293955;--txt:#edf3ff;--muted:#94a4bf;--green:#35d39a;--red:#ff7180;--gold:#f3c66d;--blue:#83b2ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(900px 450px at 85% -10%,#1c355a 0,transparent 60%),var(--bg);color:var(--txt);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+header{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);background:#0a1020ed;position:sticky;top:0;z-index:3;backdrop-filter:blur(12px)}
+.brand{font-weight:900;letter-spacing:1.5px;font-size:18px}.brand em{font-style:normal;color:var(--blue)}.sub{font-size:10px;color:var(--muted);letter-spacing:1px}.pill{font-size:10px;border:1px solid var(--line);border-radius:30px;padding:5px 8px;color:var(--muted)}.demo{color:var(--gold);border-color:#69552b}
+main{max-width:1100px;margin:auto;padding:16px}.hero{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:14px}.hero h1{font-size:24px;margin:2px 0}.muted{color:var(--muted)}.tabs{display:flex;gap:7px;overflow:auto;margin:12px 0 14px}.tab{white-space:nowrap;border:1px solid var(--line);background:var(--p);color:var(--muted);border-radius:10px;padding:9px 13px}.tab.active{background:#234778;color:white;border-color:#4778b7}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.card{background:linear-gradient(145deg,var(--p),#0f1728);border:1px solid var(--line);border-radius:15px;padding:14px;min-width:0}.metric label{color:var(--muted);font-size:11px}.metric strong{display:block;font-size:23px;margin-top:5px}.metric small{color:var(--muted);font-size:10px}
+.layout{display:grid;grid-template-columns:1.25fr 1fr;gap:12px;margin-top:12px}.title{font-weight:800;font-size:14px;margin:0 0 11px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+button,select,input{font:inherit;color:var(--txt);background:var(--p2);border:1px solid var(--line);border-radius:9px;padding:9px 11px}button{cursor:pointer}button.primary{background:#24528b;border-color:#4279bb}button:disabled{opacity:.45;cursor:not-allowed}input[type=file]{width:100%;font-size:12px}input[type=number]{width:90px}
+.notice{font-size:11px;color:#e7d6aa;background:#282216;border:1px solid #66552d;border-radius:10px;padding:10px;margin-top:10px}
+.pairgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pair{padding:12px;border:1px solid var(--line);border-radius:12px;background:#0c1527}.pair h3{margin:0 0 5px;font-size:15px}
+table{width:100%;border-collapse:collapse;font-size:12px}td,th{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted);font-weight:600}
+.good{color:var(--green)}.bad{color:var(--red)}.gold{color:var(--gold)}.hidden{display:none!important}.progress{height:6px;background:#25334c;border-radius:8px;overflow:hidden}.progress span{display:block;height:100%;background:var(--blue);width:0}
+.agentgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.agent{background:#0b1527;border:1px solid var(--line);border-radius:9px;padding:9px}.agent b{display:block;font-size:11px}.agent small{color:var(--muted);font-size:10px}
+footer{text-align:center;color:var(--muted);font-size:10px;padding:22px}
+@media(max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.hero{align-items:start;flex-direction:column}main{padding:12px}.pairgrid{grid-template-columns:1fr 1fr}}
+@media(max-width:390px){.pairgrid{grid-template-columns:1fr}.brand{font-size:16px}.card{padding:11px}}
+</style></head>
+<body>
+<header><div><div class="brand">SMART EDGE <em>X</em></div><div class="sub">DUAL-PAIR MARKET INTELLIGENCE</div></div><span class="pill demo">PAPER / BACKTEST ONLY</span></header>
+<main>
+<div class="hero"><div><div class="sub">ANDROID WEB APP · BUILD 0.2</div><h1>Strategy & backtest terminal</h1><div class="muted">EUR/JPY and EUR/USD only · OTC excluded</div></div><span class="pill" id="dataStatus">No historical data loaded</span></div>
+<div class="tabs"><button class="tab active" data-tab="overview">Overview</button><button class="tab" data-tab="backtest">Backtesting</button><button class="tab" data-tab="signals">Signal engine</button><button class="tab" data-tab="risk">Risk controls</button></div>
+<section id="overview">
+<div class="grid">
+<div class="card metric"><label>Pairs enabled</label><strong>2</strong><small>EUR/JPY · EUR/USD</small></div>
+<div class="card metric"><label>Historical bars loaded</label><strong id="barsTotal">0</strong><small>Imported from CSV</small></div>
+<div class="card metric"><label>Backtests completed</label><strong id="testsTotal">0</strong><small>Using imported candles</small></div>
+<div class="card metric"><label>Live win rate</label><strong>—</strong><small>No live performance claimed</small></div>
+</div>
+<div class="card" style="margin-bottom:12px"><h2 class="title">Automatic historical data download</h2>
+<div class="row"><label>From <input id="fromDate" type="date" value="2025-01-01"></label><label>To <input id="toDate" type="date" value="2026-01-01"></label></div>
+<div class="row" style="margin-top:10px"><button class="primary" id="fetchJpy">Download EUR/JPY M1</button><button class="primary" id="fetchUsd">Download EUR/USD M1</button></div>
+<div class="progress" style="margin-top:10px"><span id="fetchProgress"></span></div><div class="muted" id="fetchStatus" style="font-size:11px;margin-top:7px">Requires the hosted data service. Manual CSV import remains available.</div>
+</div>
+<div class="layout">
+<div class="card"><h2 class="title">Historical data setup</h2><div class="pairgrid">
+<div class="pair"><h3>EUR/JPY</h3><div class="muted" id="eurjpyInfo">No CSV imported</div><label class="muted">Import M1 CSV</label><input type="file" id="filejpy" accept=".csv,text/csv"></div>
+<div class="pair"><h3>EUR/USD</h3><div class="muted" id="eurusdInfo">No CSV imported</div><label class="muted">Import M1 CSV</label><input type="file" id="fileusd" accept=".csv,text/csv"></div>
+</div><div class="notice">CSV columns required: timestamp, open, high, low, close. Unix milliseconds or a parseable date/time are accepted. Use genuine non-OTC forex history. Data remains in this browser session; files are not uploaded.</div></div>
+<div class="card"><h2 class="title">Backtest configuration</h2><div class="row between"><label>Expiry (minutes)</label><select id="expiry"><option value="1">1 minute</option><option value="2">2 minutes</option><option value="5">5 minutes</option></select></div><div class="row between" style="margin-top:10px"><label>Minimum evidence score</label><select id="threshold"><option value="70">70 / 100</option><option value="75" selected>75 / 100</option><option value="80">80 / 100</option><option value="85">85 / 100</option></select></div><div class="row between" style="margin-top:10px"><label>Assumed payout</label><select id="payout"><option value=".70">70%</option><option value=".75">75%</option><option value=".80" selected>80%</option><option value=".85">85%</option><option value=".90">90%</option></select></div><button class="primary" id="runBoth" style="width:100%;margin-top:14px">Run both backtests</button><div class="muted" style="font-size:10px;margin-top:8px">Payout is a scenario assumption, not a broker quote. Test outcomes are based on candle close at expiry.</div></div>
+</div>
+<div class="card" style="margin-top:12px"><h2 class="title">Pair comparison</h2><div class="muted" id="compareEmpty">Import historical candles for both pairs, then run the backtest. No performance values are fabricated.</div><div id="compareTable" class="hidden"><table><thead><tr><th>Pair</th><th>Trades</th><th>Win rate</th><th>Net units*</th><th>Max DD*</th></tr></thead><tbody id="compareBody"></tbody></table><small class="muted">*Assumes 1 unit risk per trade and selected payout. Drawdown is calculated on sequential unit returns.</small></div></div>
+</section>
+<section id="backtest" class="hidden">
+<div class="card"><h2 class="title">Backtest results</h2><div class="muted" id="resultsEmpty">No tests run yet. Import M1 CSV files in Overview.</div><div id="results" class="hidden"><div class="pairgrid"><div class="pair"><h3>EUR/JPY</h3><div id="resultjpy">Not tested</div></div><div class="pair"><h3>EUR/USD</h3><div id="resultusd">Not tested</div></div></div><div style="overflow:auto;margin-top:12px"><table><thead><tr><th>Pair</th><th>Expiry</th><th>Direction</th><th>Entry time</th><th>Entry</th><th>Expiry close</th><th>Outcome</th><th>Score</th></tr></thead><tbody id="tradesBody"></tbody></table></div><button id="export" style="margin-top:12px">Export trade log CSV</button></div></div>
+</section>
+<section id="signals" class="hidden">
+<div class="layout"><div class="card"><h2 class="title">Seven-agent strategy framework</h2><div class="agentgrid">
+<div class="agent"><b>01 · Liquidity Hunter</b><small>Recent swing sweep and rejection</small></div><div class="agent"><b>02 · Trend Intelligence</b><small>EMA 20 / EMA 50 alignment</small></div><div class="agent"><b>03 · Reversal Detector</b><small>Rejection wick and close location</small></div><div class="agent"><b>04 · Momentum Engine</b><small>RSI momentum confirmation</small></div><div class="agent"><b>05 · Volatility Guard</b><small>ATR and range sanity checks</small></div><div class="agent"><b>06 · Statistical Validator</b><small>Out-of-sample testing still required</small></div><div class="agent"><b>07 · Risk Commander</b><small>Position and session risk limits</small></div></div></div>
+<div class="card"><h2 class="title">Signal integrity</h2><p class="muted">The backtest uses only closed candles and the next candle close as the entry reference to reduce look-ahead bias. A trade outcome is determined by comparing the expiry candle close with the entry price. Ties are excluded.</p><div class="notice">Evidence score is a rule-agreement score, NOT a probability of winning. A profitable historical result is not a guarantee of future results.</div></div></div>
+</section>
+<section id="risk" class="hidden">
+<div class="card"><h2 class="title">Capital protection defaults</h2><table><tr><th>Rule</th><th>Setting</th></tr><tr><td>Risk per trade</td><td>1% maximum</td></tr><tr><td>Daily loss stop</td><td>3%</td></tr><tr><td>Consecutive losses</td><td>Pause after 3</td></tr><tr><td>Martingale</td><td class="good">Disabled</td></tr><tr><td>OTC instruments</td><td class="good">Excluded</td></tr><tr><td>Broker auto-execution</td><td>Not implemented</td></tr></table><div class="notice">Binary options can result in rapid loss of the full stake. Quotex and Pocket Option availability and legal suitability vary by jurisdiction. This app is for research and paper testing only.</div></div>
+</section>
+<footer>SMART EDGE X · Local browser prototype · No broker connection · No profit guarantee</footer>
+</main>
+<script>
+const datasets={EURJPY:null,EURUSD:null},results={EURJPY:null,EURUSD:null};
+const $=id=>document.getElementById(id);
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));['overview','backtest','signals','risk'].forEach(x=>$(x).classList.toggle('hidden',x!==b.dataset.tab));});
+function parseCSV(text){let lines=text.trim().split(/\r?\n/);if(lines.length<30)throw Error('Need at least 30 candles.');let heads=lines.shift().split(',').map(x=>x.trim().toLowerCase());let ix=k=>heads.indexOf(k);for(let k of ['open','high','low','close'])if(ix(k)<0)throw Error('Missing '+k+' column');let ti=ix('timestamp');if(ti<0)ti=ix('time');if(ti<0)throw Error('Missing timestamp column');let out=[];for(let line of lines){let a=line.split(',');let raw=a[ti];let t=Number(raw);if(!Number.isFinite(t)||t<100000000000)t=Date.parse(raw);let c={t,o:+a[ix('open')],h:+a[ix('high')],l:+a[ix('low')],c:+a[ix('close')]};if(Number.isFinite(c.t)&&[c.o,c.h,c.l,c.c].every(Number.isFinite))out.push(c)}out.sort((a,b)=>a.t-b.t);if(out.length<30)throw Error('Not enough valid candle rows.');return out}
+async function loadFile(input,key,info){let f=input.files[0];if(!f)return;try{datasets[key]=parseCSV(await f.text());$(info).text(datasets[key].length.toLocaleString()+' candles · '+new Date(datasets[key][0].t).toLocaleDateString()+' to '+new Date(datasets[key].at(-1).t).toLocaleDateString());$('dataStatus').textContent='Historical data imported';updateBars()}catch(e){alert('Could not read '+key+' CSV: '+e.message);input.value=''}}
+$('filejpy').onchange=()=>loadFile($('filejpy'),'EURJPY','eurjpyInfo');$('fileusd').onchange=()=>loadFile($('fileusd'),'EURUSD','eurusdInfo');
+function ema(arr,n,i){let k=2/(n+1),v=arr[i-n+1];for(let j=i-n+2;j<=i;j++)v=arr[j]*k+v*(1-k);return v}
+function rsi(cs,i,n=14){let gain=0,loss=0;for(let j=i-n+1;j<=i;j++){let d=cs[j]-cs[j-1];if(d>0)gain+=d;else loss-=d}if(loss===0)return 100;return 100-100/(1+(gain/n)/(loss/n))}
+function atr(d,i,n=14){let sum=0;for(let j=i-n+1;j<=i;j++)sum+=Math.max(d[j].h-d[j].l,Math.abs(d[j].h-d[j-1].c),Math.abs(d[j].l-d[j-1].c));return sum/n}
+function runTest(pair,d){let expiry=+$('expiry').value,threshold=+$('threshold').value,payout=+$('payout').value,cs=d.map(x=>x.c),trades=[],equity=0,peak=0,maxdd=0,lossStreak=0,maxStreak=0;
+for(let i=55;i<d.length-expiry-1;i++){let e20=ema(cs,20,i),e50=ema(cs,50,i),rv=rsi(cs,i),a=atr(d,i),range=d[i].h-d[i].l;if(!a||range===0||range>a*2.8)continue;
+let bullish=0,bearish=0;
+if(e20>e50)bullish+=24;else bearish+=24;
+if(cs[i]>e20)bullish+=12;else bearish+=12;
+if(rv>=52&&rv<=70)bullish+=18;if(rv<=48&&rv>=30)bearish+=18;
+let body=cs[i]-d[i].o,upper=d[i].h-Math.max(cs[i],d[i].o),lower=Math.min(cs[i],d[i].o)-d[i].l;
+if(body>0&&body>range*.45)bullish+=16;if(body<0&&-body>range*.45)bearish+=16;
+let priorHigh=Math.max(...d.slice(i-10,i).map(x=>x.h)),priorLow=Math.min(...d.slice(i-10,i).map(x=>x.l));
+if(d[i].l<priorLow&&cs[i]>priorLow)bullish+=18;if(d[i].h>priorHigh&&cs[i]<priorHigh)bearish+=18;
+let side=bullish>=bearish?'CALL':'PUT',score=Math.max(bullish,bearish);if(score<threshold)continue;
+let entry=d[i+1].o,exit=d[i+expiry].c;if(!Number.isFinite(entry)||!Number.isFinite(exit))continue;let win=side==='CALL'?exit>entry:exit<entry;if(exit===entry)continue;
+let ret=win?payout:-1;equity+=ret;peak=Math.max(peak,equity);maxdd=Math.max(maxdd,peak-equity);lossStreak=win?0:lossStreak+1;maxStreak=Math.max(maxStreak,lossStreak);
+trades.push({pair,expiry,side,score,t:d[i+1].t,entry,exit,win,ret});
+i+=expiry; // avoid overlapping positions
+}
+let wins=trades.filter(x=>x.win).length,net=trades.reduce((s,x)=>s+x.ret,0);return{pair,trades,wins,losses:trades.length-wins,rate:trades.length?wins/trades.length*100:null,net,maxdd,maxStreak,expiry,payout}}
+function summary(r){if(!r)return'No imported data';return `<b>${r.trades.length} trades</b><br>Wins: <span class="good">${r.wins}</span> · Losses: <span class="bad">${r.losses}</span><br>Win rate: <b>${r.rate===null?'—':r.rate.toFixed(2)+'%'}</b><br>Net: <b class="${r.net>=0?'good':'bad'}">${r.net.toFixed(2)} risk units</b><br>Max drawdown: ${r.maxdd.toFixed(2)} units<br>Longest losing streak: ${r.maxStreak}`}
+function updateBars(){let n=Object.values(datasets).reduce((s,x)=>s+(x?x.length:0),0);$('barsTotal').textContent=n.toLocaleString()}
+$('runBoth').onclick=()=>{let any=false;for(let pair of ['EURJPY','EURUSD']){results[pair]=datasets[pair]?runTest(pair,datasets[pair]):null;if(results[pair])any=true}if(!any){alert('Import at least one pair CSV first.');return}renderResults();$('testsTotal').textContent=Object.values(results).filter(Boolean).length;$('compareEmpty').classList.add('hidden');$('compareTable').classList.remove('hidden');$('compareBody').innerHTML=['EURJPY','EURUSD'].map(p=>{let r=results[p];return r?`<tr><td>${p}</td><td>${r.trades.length}</td><td>${r.rate.toFixed(2)}%</td><td>${r.net.toFixed(2)}</td><td>${r.maxdd.toFixed(2)}</td></tr>`:`<tr><td>${p}</td><td colspan="4">No data</td></tr>`}).join('');};
+function renderResults(){$('resultsEmpty').classList.add('hidden');$('results').classList.remove('hidden');$('resultjpy').innerHTML=summary(results.EURJPY);$('resultusd').innerHTML=summary(results.EURUSD);let all=[...(results.EURJPY?.trades||[]),...(results.EURUSD?.trades||[])].sort((a,b)=>b.t-a.t);$('tradesBody').innerHTML=all.slice(0,500).map(t=>`<tr><td>${t.pair}</td><td>${t.expiry}m</td><td>${t.side}</td><td>${new Date(t.t).toLocaleString()}</td><td>${t.entry}</td><td>${t.exit}</td><td class="${t.win?'good':'bad'}">${t.win?'WIN':'LOSS'}</td><td>${t.score}/100</td></tr>`).join('')||'<tr><td colspan="8">No signals passed the filter for this dataset.</td></tr>'}
+$('export').onclick=()=>{let all=[...(results.EURJPY?.trades||[]),...(results.EURUSD?.trades||[])];let rows=[['pair','expiry_minutes','side','score','timestamp','entry','expiry_close','outcome','return_units'],...all.map(t=>[t.pair,t.expiry,t.side,t.score,new Date(t.t).toISOString(),t.entry,t.exit,t.win?'WIN':'LOSS',t.ret])];let csv=rows.map(r=>r.join(',')).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='smart-edge-x-backtest.csv';a.click();URL.revokeObjectURL(a.href)};
+
+async function fetchHistory(pair){
+ const from=$('fromDate').value,to=$('toDate').value;
+ if(!from||!to||from>=to){alert('Choose a valid date range.');return}
+ const days=(Date.parse(to)-Date.parse(from))/86400000;
+ if(days>366){alert('For reliability, download at most 366 days per request.');return}
+ const btn=$(pair==='EURJPY'?'fetchJpy':'fetchUsd');btn.disabled=true;
+ $('fetchStatus').textContent='Requesting '+pair+' M1 candles from the hosted data service…';
+ $('fetchProgress').style.width='20%';
+ try{
+  const r=await fetch('/api/history?pair='+pair+'&from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to));
+  if(!r.ok){let msg=await r.text();throw Error(msg||('HTTP '+r.status))}
+  const payload=await r.json();
+  if(!payload.candles||payload.candles.length<30)throw Error('The provider returned too few candles for this period.');
+  datasets[pair]=payload.candles.map(c=>({t:+c.timestamp,o:+c.open,h:+c.high,l:+c.low,c:+c.close}));
+  const info=pair==='EURJPY'?'eurjpyInfo':'eurusdInfo';
+  $(info).text(datasets[pair].length.toLocaleString()+' candles · '+from+' to '+to+' · Dukascopy '+payload.priceType);
+  updateBars();$('dataStatus').textContent='Historical data downloaded';
+  $('fetchProgress').style.width='100%';
+  $('fetchStatus').textContent='Downloaded '+datasets[pair].length.toLocaleString()+' '+pair+' M1 candles. You can now run the backtest.';
+ }catch(e){$('fetchStatus').textContent='Download failed: '+e.message+'. You can still import a CSV manually.';$('fetchProgress').style.width='0%'}
+ finally{btn.disabled=false}
+}
+$('fetchJpy').onclick=()=>fetchHistory('EURJPY');$('fetchUsd').onclick=()=>fetchHistory('EURUSD');
+
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script></body></html>
