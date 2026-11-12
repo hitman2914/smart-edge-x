@@ -50,8 +50,9 @@ app.get('/api/history', async (req, res) => {
     console.log(`[history] complete ${pair} ${from} -> ${to}: ${candles.length} candles`);
     return res.json(payload);
   } catch (err) {
-    console.error(`[history] failed ${pair} ${from} -> ${to}:`, err?.stack || err);
-    return res.status(502).send('Historical provider request failed for this 14-day batch. Retry the download; completed batches can be fetched again from cache.');
+    console.error(`[history] failed ${pair} ${from} -> ${to}:`, err?.stack || JSON.stringify(err) || err);
+    const detail = err?.message || (err?.validationErrors ? JSON.stringify(err.validationErrors) : String(err));
+    return res.status(502).send(`Historical provider error: ${detail}`);
   }
 });
 
