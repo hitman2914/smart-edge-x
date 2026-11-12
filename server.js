@@ -39,7 +39,7 @@ app.get('/api/history', async (req, res) => {
       retryCount: 3,
       pauseBetweenRetriesMs: 1500,
       retryOnEmpty: true,
-      failAfterRetryCount: true
+      failAfterRetryCount: false
     });
     if (!Array.isArray(candles) || candles.length === 0) {
       console.warn(`[history] empty result ${pair} ${from} -> ${to}`);
