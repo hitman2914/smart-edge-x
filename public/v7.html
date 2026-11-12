@@ -100,7 +100,7 @@ let candles=[],report=[],holdoutLog=[];
 const F=25,STEP=2;
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const sigmoid=x=>1/(1+Math.exp(-clamp(x,-25,25)));
-const logit=p{ return Math.log(clamp(p,1e-6,1-1e-6)/(1-clamp(p,1e-6,1-1e-6))); };
+function logit(p){const q=clamp(p,1e-6,1-1e-6);return Math.log(q/(1-q));}
 function dbOpen(){return new Promise((resolve,reject)=>{const q=indexedDB.open(DB_NAME);q.onupgradeneeded=()=>{if(!q.result.objectStoreNames.contains('candles'))q.result.createObjectStore('candles')};q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)})}
 async function restoreData(){try{const db=await dbOpen();const data=await new Promise((resolve,reject)=>{const q=db.transaction('candles').objectStore('candles').get('EURJPY');q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)});db.close();if(Array.isArray(data)&&data.length>1000){candles=cleanCandles(data);showData('Restored EUR/JPY historical candles from this device.')}else{$('dataStatus').textContent='No saved EUR/JPY candles found. Download or import the M1 CSV.'}}catch(e){$('dataStatus').textContent='Could not read local candle storage: '+e.message}}
 function cleanCandles(rows){const map=new Map();for(const x of rows||[]){const t=Number(x.t??x.timestamp),o=Number(x.o??x.open),h=Number(x.h??x.high),l=Number(x.l??x.low),c=Number(x.c??x.close);if(![t,o,h,l,c].every(Number.isFinite)||t<=0||o<=0||h<=0||l<=0||c<=0||h<Math.max(o,c,l)||l>Math.min(o,c,h))continue;map.set(t,{t,o,h,l,c})}return [...map.values()].sort((a,b)=>a.t-b.t)}
