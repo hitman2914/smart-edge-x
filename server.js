@@ -8,7 +8,7 @@ app.use(express.static('public', { extensions: ['html'] }));
 
 const allowed = Object.freeze({ EURJPY: 'eurjpy', EURUSD: 'eurusd' });
 const cache = new Map();
-const datePattern = /^\\d{4}-\\d{2}-\\d{2}$/;
+const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
 app.get('/health', (_req, res) => res.json({ ok: true, service: 'SMART EDGE X historical-data service' }));
 
