@@ -94,8 +94,9 @@ function renderResults(){$('resultsEmpty').classList.add('hidden');$('results').
 $('export').onclick=()=>{let all=[...(results.EURJPY?.trades||[]),...(results.EURUSD?.trades||[])];let rows=[['pair','expiry_minutes','side','score','timestamp','entry','expiry_close','outcome','return_units'],...all.map(t=>[t.pair,t.expiry,t.side,t.score,new Date(t.t).toISOString(),t.entry,t.exit,t.win?'WIN':'LOSS',t.ret])];let csv=rows.map(r=>r.join(',')).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='smart-edge-x-backtest.csv';a.click();URL.revokeObjectURL(a.href)};
 
 async function fetchHistory(pair){
- const from=$('fromDate').value,to=$('toDate').value;
- if(!from||!to||from>=to){alert('Choose a valid date range.');return}
+ const from=$('fromDate').value,selectedTo=$('toDate').value;
+ if(!from||!selectedTo||from>selectedTo){alert('Choose a valid date range.');return}
+ const to=new Date(Date.parse(selectedTo+'T00:00:00Z')+86400000).toISOString().slice(0,10); // include selected end date
  const days=(Date.parse(to+'T00:00:00Z')-Date.parse(from+'T00:00:00Z'))/86400000;
  if(days>366){alert('Choose a range of 366 days or less.');return}
  const btn=$(pair==='EURJPY'?'fetchJpy':'fetchUsd');btn.disabled=true;
@@ -122,9 +123,9 @@ async function fetchHistory(pair){
   datasets[pair]=all.map(c=>({t:+c.timestamp,o:+c.open,h:+c.high,l:+c.low,c:+c.close})).sort((a,b)=>a.t-b.t);
   if(datasets[pair].length<30)throw Error('The provider returned too few candles.');
   const info=pair==='EURJPY'?'eurjpyInfo':'eurusdInfo';
-  $(info).text(datasets[pair].length.toLocaleString()+' candles · '+from+' to '+to+' · Dukascopy bid M1');
+  $(info).text(datasets[pair].length.toLocaleString()+' candles · '+from+' to '+selectedTo+' · Dukascopy bid M1');
   updateBars();$('dataStatus').textContent=pair+' historical data downloaded';
-  $('fetchStatus').textContent='Complete: '+datasets[pair].length.toLocaleString()+' '+pair+' candles loaded for '+from+' to '+to+'.';
+  $('fetchStatus').textContent='Complete: '+datasets[pair].length.toLocaleString()+' '+pair+' candles loaded for '+from+' to '+selectedTo+'.';
   $('fetchProgress').style.width='100%';
  }catch(e){
   $('fetchStatus').textContent='Download stopped: '+(e.name==='AbortError'?'a 14-day batch timed out. Tap download again to retry.':e.message);
