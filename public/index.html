@@ -123,7 +123,7 @@ async function fetchHistory(pair){
   datasets[pair]=all.map(c=>({t:+c.timestamp,o:+c.open,h:+c.high,l:+c.low,c:+c.close})).sort((a,b)=>a.t-b.t);
   if(datasets[pair].length<30)throw Error('The provider returned too few candles.');
   const info=pair==='EURJPY'?'eurjpyInfo':'eurusdInfo';
-  $(info).text(datasets[pair].length.toLocaleString()+' candles · '+from+' to '+selectedTo+' · Dukascopy bid M1');
+  $(info).textContent=datasets[pair].length.toLocaleString()+' candles · '+from+' to '+selectedTo+' · Dukascopy bid M1';
   updateBars();$('dataStatus').textContent=pair+' historical data downloaded';
   $('fetchStatus').textContent='Complete: '+datasets[pair].length.toLocaleString()+' '+pair+' candles loaded for '+from+' to '+selectedTo+'.';
   $('fetchProgress').style.width='100%';
