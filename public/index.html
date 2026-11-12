@@ -96,24 +96,40 @@ $('export').onclick=()=>{let all=[...(results.EURJPY?.trades||[]),...(results.EU
 async function fetchHistory(pair){
  const from=$('fromDate').value,to=$('toDate').value;
  if(!from||!to||from>=to){alert('Choose a valid date range.');return}
- const days=(Date.parse(to)-Date.parse(from))/86400000;
- if(days>366){alert('For reliability, download at most 366 days per request.');return}
+ const days=(Date.parse(to+'T00:00:00Z')-Date.parse(from+'T00:00:00Z'))/86400000;
+ if(days>366){alert('Choose a range of 366 days or less.');return}
  const btn=$(pair==='EURJPY'?'fetchJpy':'fetchUsd');btn.disabled=true;
- $('fetchStatus').textContent='Requesting '+pair+' M1 candles from the hosted data service…';
- $('fetchProgress').style.width='20%';
+ $('fetchJpy').disabled=true;$('fetchUsd').disabled=true;
+ const all=[];let cursor=from,done=0;
+ $('fetchProgress').style.width='0%';
+ $('fetchStatus').textContent='Preparing '+pair+' download in 14-day batches…';
  try{
-  const r=await fetch('/api/history?pair='+pair+'&from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to));
-  if(!r.ok){let msg=await r.text();throw Error(msg||('HTTP '+r.status))}
-  const payload=await r.json();
-  if(!payload.candles||payload.candles.length<30)throw Error('The provider returned too few candles for this period.');
-  datasets[pair]=payload.candles.map(c=>({t:+c.timestamp,o:+c.open,h:+c.high,l:+c.low,c:+c.close}));
+  while(cursor<to){
+   const nextDate=new Date(Math.min(Date.parse(cursor+'T00:00:00Z')+14*86400000,Date.parse(to+'T00:00:00Z')));
+   const chunkTo=nextDate.toISOString().slice(0,10);
+   $('fetchStatus').textContent=pair+': downloading '+cursor+' to '+chunkTo+' ('+(done+1)+' of '+Math.ceil(days/14)+' batches)…';
+   const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),120000);
+   let r;
+   try{r=await fetch('/api/history?pair='+pair+'&from='+encodeURIComponent(cursor)+'&to='+encodeURIComponent(chunkTo),{signal:controller.signal,cache:'no-store'});}
+   finally{clearTimeout(timeout)}
+   if(!r.ok){const msg=await r.text();throw Error(pair+' '+cursor+'–'+chunkTo+': '+(msg||('HTTP '+r.status)))}
+   const payload=await r.json();
+   if(!Array.isArray(payload.candles)||payload.candles.length===0)throw Error('No candles returned for '+cursor+' to '+chunkTo);
+   all.push(...payload.candles);
+   done++;$('fetchProgress').style.width=Math.round(done/Math.ceil(days/14)*100)+'%';
+   cursor=chunkTo;
+  }
+  datasets[pair]=all.map(c=>({t:+c.timestamp,o:+c.open,h:+c.high,l:+c.low,c:+c.close})).sort((a,b)=>a.t-b.t);
+  if(datasets[pair].length<30)throw Error('The provider returned too few candles.');
   const info=pair==='EURJPY'?'eurjpyInfo':'eurusdInfo';
-  $(info).text(datasets[pair].length.toLocaleString()+' candles · '+from+' to '+to+' · Dukascopy '+payload.priceType);
-  updateBars();$('dataStatus').textContent='Historical data downloaded';
+  $(info).text(datasets[pair].length.toLocaleString()+' candles · '+from+' to '+to+' · Dukascopy bid M1');
+  updateBars();$('dataStatus').textContent=pair+' historical data downloaded';
+  $('fetchStatus').textContent='Complete: '+datasets[pair].length.toLocaleString()+' '+pair+' candles loaded for '+from+' to '+to+'.';
   $('fetchProgress').style.width='100%';
-  $('fetchStatus').textContent='Downloaded '+datasets[pair].length.toLocaleString()+' '+pair+' M1 candles. You can now run the backtest.';
- }catch(e){$('fetchStatus').textContent='Download failed: '+e.message+'. You can still import a CSV manually.';$('fetchProgress').style.width='0%'}
- finally{btn.disabled=false}
+ }catch(e){
+  $('fetchStatus').textContent='Download stopped: '+(e.name==='AbortError'?'a 14-day batch timed out. Tap download again to retry.':e.message);
+  $('fetchProgress').style.width='0%';
+ }finally{btn.disabled=false;$('fetchJpy').disabled=false;$('fetchUsd').disabled=false}
 }
 $('fetchJpy').onclick=()=>fetchHistory('EURJPY');$('fetchUsd').onclick=()=>fetchHistory('EURUSD');
 
