@@ -63,9 +63,14 @@ footer{text-align:center;color:var(--muted);font-size:10px;padding:22px}
 <script>
 const datasets={EURJPY:null,EURUSD:null},results={EURJPY:null,EURUSD:null};
 const $=id=>document.getElementById(id);
+const DB_NAME='smart-edge-x-cache',DB_VERSION=1;
+function openDataDB(){return new Promise((resolve,reject)=>{if(!('indexedDB'in window)){reject(Error('IndexedDB unavailable'));return}const q=indexedDB.open(DB_NAME,DB_VERSION);q.onupgradeneeded=()=>{if(!q.result.objectStoreNames.contains('candles'))q.result.createObjectStore('candles')};q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)})}
+async function saveDataset(key,data){try{const db=await openDataDB();await new Promise((resolve,reject)=>{const tx=db.transaction('candles','readwrite');tx.objectStore('candles').put(data,key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close()}catch(e){console.warn('Local candle cache unavailable:',e.message)}}
+async function restoreDatasets(){try{const db=await openDataDB();for(const key of ['EURJPY','EURUSD']){const data=await new Promise((resolve,reject)=>{const q=db.transaction('candles').objectStore('candles').get(key);q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)});if(Array.isArray(data)&&data.length>30){datasets[key]=data;const info=key==='EURJPY'?'eurjpyInfo':'eurusdInfo';$(info).textContent=data.length.toLocaleString()+' candles · '+new Date(data[0].t).toISOString().slice(0,10)+' to '+new Date(data[data.length-1].t).toISOString().slice(0,10)+' · restored from this device'}}db.close();updateBars();if(datasets.EURJPY||datasets.EURUSD)$('dataStatus').textContent='Historical data restored from this device'}catch(e){console.warn('No local historical cache found:',e.message)}}
+
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));['overview','backtest','signals','risk'].forEach(x=>$(x).classList.toggle('hidden',x!==b.dataset.tab));});
 function parseCSV(text){let lines=text.trim().split(/\r?\n/);if(lines.length<30)throw Error('Need at least 30 candles.');let heads=lines.shift().split(',').map(x=>x.trim().toLowerCase());let ix=k=>heads.indexOf(k);for(let k of ['open','high','low','close'])if(ix(k)<0)throw Error('Missing '+k+' column');let ti=ix('timestamp');if(ti<0)ti=ix('time');if(ti<0)throw Error('Missing timestamp column');let out=[];for(let line of lines){let a=line.split(',');let raw=a[ti];let t=Number(raw);if(!Number.isFinite(t)||t<100000000000)t=Date.parse(raw);let c={t,o:+a[ix('open')],h:+a[ix('high')],l:+a[ix('low')],c:+a[ix('close')]};if(Number.isFinite(c.t)&&[c.o,c.h,c.l,c.c].every(Number.isFinite))out.push(c)}out.sort((a,b)=>a.t-b.t);if(out.length<30)throw Error('Not enough valid candle rows.');return out}
-async function loadFile(input,key,info){let f=input.files[0];if(!f)return;try{datasets[key]=parseCSV(await f.text());$(info).text(datasets[key].length.toLocaleString()+' candles · '+new Date(datasets[key][0].t).toLocaleDateString()+' to '+new Date(datasets[key].at(-1).t).toLocaleDateString());$('dataStatus').textContent='Historical data imported';updateBars()}catch(e){alert('Could not read '+key+' CSV: '+e.message);input.value=''}}
+async function loadFile(input,key,info){let f=input.files[0];if(!f)return;try{datasets[key]=parseCSV(await f.text());await saveDataset(key,datasets[key]);$(info).text(datasets[key].length.toLocaleString()+' candles · '+new Date(datasets[key][0].t).toLocaleDateString()+' to '+new Date(datasets[key].at(-1).t).toLocaleDateString());$('dataStatus').textContent='Historical data imported';updateBars()}catch(e){alert('Could not read '+key+' CSV: '+e.message);input.value=''}}
 $('filejpy').onchange=()=>loadFile($('filejpy'),'EURJPY','eurjpyInfo');$('fileusd').onchange=()=>loadFile($('fileusd'),'EURUSD','eurusdInfo');
 function ema(arr,n,i){let k=2/(n+1),v=arr[i-n+1];for(let j=i-n+2;j<=i;j++)v=arr[j]*k+v*(1-k);return v}
 function rsi(cs,i,n=14){let gain=0,loss=0;for(let j=i-n+1;j<=i;j++){let d=cs[j]-cs[j-1];if(d>0)gain+=d;else loss-=d}if(loss===0)return 100;return 100-100/(1+(gain/n)/(loss/n))}
@@ -149,6 +154,7 @@ async function fetchHistory(pair){
   }
   datasets[pair]=all.map(c=>({t:+c.timestamp,o:+c.open,h:+c.high,l:+c.low,c:+c.close})).sort((a,b)=>a.t-b.t);
   if(datasets[pair].length<30)throw Error('The provider returned too few candles.');
+  await saveDataset(pair,datasets[pair]);
   const info=pair==='EURJPY'?'eurjpyInfo':'eurusdInfo';
   $(info).textContent=datasets[pair].length.toLocaleString()+' candles · '+from+' to '+selectedTo+' · Dukascopy bid M1';
   updateBars();$('dataStatus').textContent=pair+' historical data downloaded';
@@ -160,6 +166,7 @@ async function fetchHistory(pair){
  }finally{btn.disabled=false;$('fetchJpy').disabled=false;$('fetchUsd').disabled=false}
 }
 $('fetchJpy').onclick=()=>fetchHistory('EURJPY');$('fetchUsd').onclick=()=>fetchHistory('EURUSD');
+restoreDatasets();
 
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 </script></body></html>
