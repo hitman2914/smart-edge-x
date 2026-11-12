@@ -120,7 +120,7 @@ function buildFeatures(d){
  for(let i=1;i<n;i++){const up=d[i].h-d[i-1].h,down=d[i-1].l-d[i].l;plusSum+=up>down&&up>0?up:0;minusSum+=down>up&&down>0?down:0;if(i>=14){const p=100*plusSum/(plusSum+minusSum+1e-12);adx[i]=Math.abs(2*p-100)}}
  let sum=0,sq=0,as=0;
  for(let i=0;i<n;i++){sum+=close[i];sq+=close[i]*close[i];as+=atr[i];if(i>=20){sum-=close[i-20];sq-=close[i-20]*close[i-20]}if(i>=50)as-=atr[i-50];if(i>=19){mean20[i]=sum/20;sd20[i]=Math.sqrt(Math.max(1e-18,sq/20-mean20[i]*mean20[i]))}if(i>=49)atrMean50[i]=as/50}
- const rows=[],times=[],barIndex=[];
+ const capacity=Math.ceil((n-108)/STEP),X=new Float32Array(capacity*F),times=new Float64Array(capacity),barIndex=new Uint32Array(capacity);let m=0;
  for(let i=100;i<n-8;i+=STEP){const a=atr[i],range=d[i].h-d[i].l;if(!a||!range||!sd20[i]||!atrMean50[i])continue;let hi=-Infinity,lo=Infinity;for(let j=i-20;j<i;j++){if(d[j].h>hi)hi=d[j].h;if(d[j].l<lo)lo=d[j].l}const body=close[i]-d[i].o,upper=d[i].h-Math.max(close[i],d[i].o),lower=Math.min(close[i],d[i].o)-d[i].l,hr=new Date(d[i].t).getUTCHours(),wd=new Date(d[i].t).getUTCDay();
  const vals=[
  (close[i]-close[i-1])/a,(close[i]-close[i-3])/a,(close[i]-close[i-5])/a,(close[i]-close[i-10])/a,(close[i]-close[i-20])/a,(close[i]-close[i-50])/a,
@@ -129,9 +129,8 @@ function buildFeatures(d){
  body/range,upper/range,lower/range,(close[i]-d[i].l)/range,(close[i]-hi)/a,(close[i]-lo)/a,
  Math.sin(2*Math.PI*hr/24),Math.cos(2*Math.PI*hr/24),Math.sin(2*Math.PI*wd/7),Math.cos(2*Math.PI*wd/7)
  ];
- if(vals.some(v=>!Number.isFinite(v)))continue;rows.push(vals.map(v=>clamp(v,-8,8)));times.push(d[i+1].t);barIndex.push(i)}
- const X=new Float32Array(rows.length*F);for(let r=0;r<rows.length;r++)for(let k=0;k<F;k++)X[r*F+k]=rows[r][k];
- return{X,F,barIndex:Uint32Array.from(barIndex),times:Float64Array.from(times),count:rows.length};
+ if(vals.some(v=>!Number.isFinite(v)))continue;const base=m*F;for(let k=0;k<F;k++)X[base+k]=clamp(vals[k],-8,8);times[m]=d[i+1].t;barIndex[m]=i;m++}
+ return{X:X.slice(0,m*F),F,barIndex:barIndex.slice(0,m),times:times.slice(0,m),count:m};
 }
 const GROUPS=[
  {name:'Trend expert',features:[0,1,2,3,4,5,6,7,8,9,10,14,19,20]},
@@ -156,11 +155,11 @@ function fitLogistic(fs,labels,end,features){
 }
 function expertProb(fs,row,model){let z=model.w[model.features.length],base=row*fs.F;for(let q=0;q<model.features.length;q++)z+=model.w[q]*(fs.X[base+model.features[q]]-model.mean[q])/model.sd[q];return sigmoid(z)}
 function rawEnsemble(fs,row,models){let p=0;for(const m of models)p+=expertProb(fs,row,m);return p/models.length}
-function fitCalibration(fs,labels,models,start,end){let a=1,b=0;for(let ep=0;ep<220;ep++){let ga=0,gb=0;for(let r=start;r<end;r++){const z=Math.log(clamp(rawEnsemble(fs,labels.ids[r],models),1e-6,1-1e-6)/(1-clamp(rawEnsemble(fs,labels.ids[r],models),1e-6,1-1e-6))),q=sigmoid(a*z+b),err=q-labels.y[r];ga+=err*z;gb+=err}const rate=.08/Math.max(1,end-start);a-=rate*(ga+.02*(a-1));b-=rate*gb}return{predict:row=>{const p=rawEnsemble(fs,row,models),z=Math.log(clamp(p,1e-6,1-1e-6)/(1-clamp(p,1e-6,1-1e-6)));return sigmoid(a*z+b)}}}
+function fitCalibration(fs,labels,models,start,end){const raw=new Float32Array(labels.n);for(let r=0;r<labels.n;r++)raw[r]=rawEnsemble(fs,labels.ids[r],models);let a=1,b=0;for(let ep=0;ep<180;ep++){let ga=0,gb=0;for(let r=start;r<end;r++){const p=clamp(raw[r],1e-6,1-1e-6),z=Math.log(p/(1-p)),q=sigmoid(a*z+b),err=q-labels.y[r];ga+=err*z;gb+=err}const rate=.08/Math.max(1,end-start);a-=rate*(ga+.02*(a-1));b-=rate*gb}const calibrated=new Float32Array(labels.n);for(let r=0;r<labels.n;r++){const p=clamp(raw[r],1e-6,1-1e-6);calibrated[r]=sigmoid(a*Math.log(p/(1-p))+b)}return{p:calibrated}}
 function hoursInRange(t,start,end){const set=new Set();for(let r=start;r<end;r++)set.add(Math.floor(t[r]/3600000));return Math.max(1,set.size)}
 function simulate(fs,labels,cal,start,end,threshold,payout,h){
  let trades=[],last=-Infinity,eq=0,peak=0,dd=0,wins=0;
- for(let r=start;r<end;r++){const p=cal.predict(labels.ids[r]),conf=Math.max(p,1-p);if(conf<threshold||labels.t[r]-last<h*60000)continue;const side=p>=.5?1:0,win=side===labels.y[r],ret=win?payout:-1;eq+=ret;peak=Math.max(peak,eq);dd=Math.max(dd,peak-eq);if(win)wins++;trades.push({time:labels.t[r],side:side?'CALL':'PUT',confidence:conf,win,ret,expiry:h});last=labels.t[r]}
+ for(let r=start;r<end;r++){const p=cal.p[r],conf=Math.max(p,1-p);if(conf<threshold||labels.t[r]-last<h*60000)continue;const side=p>=.5?1:0,win=side===labels.y[r],ret=win?payout:-1;eq+=ret;peak=Math.max(peak,eq);dd=Math.max(dd,peak-eq);if(win)wins++;trades.push({time:labels.t[r],side:side?'CALL':'PUT',confidence:conf,win,ret,expiry:h});last=labels.t[r]}
  const active=hoursInRange(labels.t,start,end);
  return{trades,n:trades.length,wins,rate:trades.length?100*wins/trades.length:0,net:eq,dd,perHour:trades.length/active};
 }
