@@ -46,7 +46,7 @@ function fitSubModel(s,end,indices){const mean=new Float64Array(indices.length),
  for(let ep=0;ep<epochs;ep++){grad.fill(0);for(let i=0;i<N;i++){let z=w[indices.length];for(let q=0;q<indices.length;q++)z+=w[q]*((s.X[i*s.F+indices[q]]-mean[q])/sd[q]);const err=sigmoid(z)-s.Y[i];for(let q=0;q<indices.length;q++)grad[q]+=err*((s.X[i*s.F+indices[q]]-mean[q])/sd[q])/N;grad[indices.length]+=err/N}for(let q=0;q<indices.length;q++)w[q]-=lr*(grad[q]+lambda*w[q]);w[indices.length]-=lr*grad[indices.length]}
  return{x:s,indices,mean,sd,w};
 }
-function fitModel(s,end){const all=Array.from({length:s.F},(_,i)=>i),trend=[0,1,2,3,4,5,6,14,17,18,19,20],reversal=[7,8,9,10,11,12,13,21,22];return{models:[fitSubModel(s,end,all),fitSubModel(s,end,trend),fitSubModel(s,end,reversal)]}}
+function fitModel(s,end){const all=Array.from({length:s.F},(_,i)=>i),trend=[0,1,2,3,4,5,6,14,17,18,19,20],reversal=[7,8,9,10,11,12,13,21,22];return{x:s,models:[fitSubModel(s,end,all),fitSubModel(s,end,trend),fitSubModel(s,end,reversal)]}}
 function rawProb(model,i){let total=0;for(const m of model.models){let z=m.w[m.indices.length];for(let q=0;q<m.indices.length;q++)z+=m.w[q]*((m.x.X[i*m.x.F+m.indices[q]]-m.mean[q])/m.sd[q]);total+=sigmoid(z)}return total/model.models.length}
 function logit(p){const q=Math.max(1e-6,Math.min(1-1e-6,p));return Math.log(q/(1-q))}
 function fitCalibration(model,start,end){let a=1,b=0;for(let ep=0;ep<350;ep++){let ga=0,gb=0;for(let i=start;i<end;i++){const z=logit(rawProb(model,i)),q=sigmoid(a*z+b),e=q-model.x.Y[i];ga+=e*z;gb+=e}const rate=.04/Math.max(1,end-start);a-=rate*(ga+.01*(a-1));b-=rate*gb}return{a,b,p:i=>sigmoid(a*logit(rawProb(model,i))+b)}}
