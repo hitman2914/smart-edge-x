@@ -17,7 +17,7 @@
 <script>
 const $=id=>document.getElementById(id);let candles=[],lastReport=null,holdoutTrades=[];
 const DB='smart-edge-x-cache';
-function dbOpen(){return new Promise((ok,no)=>{const q=indexedDB.open(DB,1);q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)})}
+function dbOpen(){return new Promise((ok,no)=>{const q=indexedDB.open(DB,1);q.onupgradeneeded=()=>{const d=q.result;if(!d.objectStoreNames.contains('candles'))d.createObjectStore('candles')};q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)})}
 async function restore(){try{const d=await dbOpen();const q=d.transaction('candles').objectStore('candles').get($('pair').value);q.onsuccess=()=>{if(Array.isArray(q.result)){candles=q.result;showData('Restored existing candles from this device.')}};q.onerror=()=>{$('dataStatus').textContent='No saved dataset found; download or import CSV.'}}catch(e){$('dataStatus').textContent='No saved dataset found; download or import CSV.'}}
 async function persist(){try{const d=await dbOpen();await new Promise((ok,no)=>{const t=d.transaction('candles','readwrite');t.objectStore('candles').put(candles,$('pair').value);t.oncomplete=ok;t.onerror=()=>no(t.error)});d.close()}catch(e){console.warn(e)}}
 function showData(msg){$('count').textContent=candles.length.toLocaleString();$('range').textContent=candles.length?new Date(candles[0].t).toISOString().slice(0,10)+' to '+new Date(candles[candles.length-1].t).toISOString().slice(0,10):'No data';$('dataStatus').textContent=msg}
